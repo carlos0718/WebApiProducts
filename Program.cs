@@ -14,14 +14,23 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add DB conection
-builder.Services.AddDbContext<DBProductsContext>(options =>
-options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// add redis connection
+var dbConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? builder.Configuration.GetConnectionString("dbConnectionString");
 try
 {
-    var connection = ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]);
-    builder.Services.AddSingleton<IConnectionMultiplexer>(connection);
+    builder.Services.AddDbContext<DBProductsContext>(options => options.UseSqlServer(dbConnectionString));
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Error connecting to DB: {ex.Message}");
+}
+
+// add redis connection
+var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? builder.Configuration["Redis:ConnectionString"];
+
+try
+{
+    var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
+    builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
 }
 catch (Exception ex)
 {
