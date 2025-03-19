@@ -29,7 +29,13 @@ var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION
 
 try
 {
-    var redisConnection = ConnectionMultiplexer.Connect(redisConnectionString);
+    ConfigurationOptions? options = ConfigurationOptions.Parse(redisConnectionString);
+
+    // Asegurarse de habilitar SSL
+    options.Ssl = true; // Habilitar SSL para la conexión
+    options.SslHost = "redis-13316.c239.us-east-1-2.ec2.redns.redis-cloud.com";  // Host de Redis Cloud
+    options.AbortOnConnectFail = false;
+    var redisConnection = ConnectionMultiplexer.Connect(options);
     builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
 }
 catch (Exception ex)
