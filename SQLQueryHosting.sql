@@ -1,6 +1,4 @@
-create database ApiEcommerce
-go
-use ApiEcommerce
+use db14340
 go
 
 
@@ -21,6 +19,13 @@ go
 alter table Products 
 add [Image] varchar(max) 
 go
+alter table Products 
+add Title varchar(max) 
+go
+alter table Products
+drop column [Name]
+
+update Products set Title = [Name]
 
 -- insert Categorias
 INSERT INTO Category ([Name]) VALUES 

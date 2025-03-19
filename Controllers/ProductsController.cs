@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApiProducts.Models;
+using WebApiProducts.Services;
+using Newtonsoft.Json;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace WebApiProducts.Controllers
 {
@@ -14,31 +13,55 @@ namespace WebApiProducts.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly DBProductsContext _context;
-
-        public ProductsController(DBProductsContext context)
+        private readonly ICacheService _cacheService;
+        public ProductsController(DBProductsContext context, ICacheService cacheService)
         {
             _context = context;
+            _cacheService = cacheService;
         }
 
         // GET: api/Products
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Products>>> GetProducts()
         {
-            return await _context.Products.ToListAsync();
+            string? cacheKey = "Products";
+            List<Products>? prodList = new List<Products>();
+            var cachingData = await _cacheService.GetCacheValueAsync(cacheKey);
+            if (string.IsNullOrEmpty(cachingData))
+            {
+                prodList = await _context.Products.ToListAsync();
+                await _cacheService.SetCacheValueAsync(cacheKey, JsonConvert.SerializeObject(prodList));
+                return Ok(prodList);
+            }
+            prodList = JsonConvert.DeserializeObject<List<Products>>(cachingData);
+
+            if (prodList == null)
+                return NotFound();
+
+            return prodList;
         }
 
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Products>> GetProducts(int id)
         {
-            var products = await _context.Products.FindAsync(id);
-
-            if (products == null)
+            string cacheKey = "Product_Id_" + id;
+            var cachingData = await _cacheService.GetCacheValueAsync(cacheKey);
+            Products? product;
+            if (string.IsNullOrEmpty(cachingData))
             {
-                return NotFound();
+                product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    return NotFound();
+                }
+                await _cacheService.SetCacheValueAsync(cacheKey, JsonConvert.SerializeObject(product));
+                return product;
             }
-
-            return products;
+            product = JsonConvert.DeserializeObject<Products>(cachingData);
+            if (product == null)
+                return NotFound();
+            return product;
         }
 
         // PUT: api/Products/5
@@ -77,10 +100,25 @@ namespace WebApiProducts.Controllers
         [HttpPost]
         public async Task<ActionResult<Products>> PostProducts(Products products)
         {
-            _context.Products.Add(products);
-            await _context.SaveChangesAsync();
+            //_context.Products.Add(products);
+            //await _context.SaveChangesAsync();
+            string cacheKey = "Products";
+            string cachingProdList = await _cacheService.GetCacheValueAsync(cacheKey);
+            List<Products>? productsList;
+            if (string.IsNullOrEmpty(cachingProdList))
+                productsList = await _context.Products.ToListAsync();
+            else
+                productsList = JsonConvert.DeserializeObject<List<Products>>(cachingProdList);
 
-            return CreatedAtAction("GetProducts", new { id = products.Id }, products);
+            int id = productsList.Count;
+            Products newProd = new Products();
+            newProd = newProd.AddProduct(id, products.Title, products.Price, products.Description, products.Image, products.Rate, products.CategoryId);
+
+            productsList?.Add(newProd);
+
+            await _cacheService.SetCacheValueAsync(cacheKey, JsonConvert.SerializeObject(productsList));
+
+            return Ok("Object added to DB temporal");
         }
 
         // DELETE: api/Products/5
