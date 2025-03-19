@@ -3,8 +3,15 @@ using WebApiProducts.Models;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using WebApiProducts.Services;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration
+       .SetBasePath(Directory.GetCurrentDirectory())
+       .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+       .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false);
+
+Console.WriteLine($"Current Environment: {builder.Environment.EnvironmentName}");
 
 // Add services to the container.
 
@@ -14,7 +21,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add DB conection
-var dbConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? builder.Configuration.GetConnectionString("dbConnectionString");
+var dbConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? builder.Configuration.GetConnectionString("DefaultConnection");
 try
 {
     builder.Services.AddDbContext<DBProductsContext>(options => options.UseSqlServer(dbConnectionString));
@@ -25,24 +32,43 @@ catch (Exception ex)
 }
 
 // add redis connection
-var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? builder.Configuration["Redis:ConnectionString"];
-
-try
+if (builder.Environment.IsProduction() || builder.Environment.IsStaging())
 {
-    ConfigurationOptions? options = ConfigurationOptions.Parse(redisConnectionString);
+    var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
 
-    // Asegurarse de habilitar SSL
-    options.Ssl = true; // Habilitar SSL para la conexión
-    options.SslHost = "redis-13316.c239.us-east-1-2.ec2.redns.redis-cloud.com:13316";  // Host de Redis Cloud
-    options.AbortOnConnectFail = false;
-    var redisConnection = ConnectionMultiplexer.Connect(options);
-    builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+    try
+    {
+        ConfigurationOptions? options = ConfigurationOptions.Parse(redisConnectionString);
+
+        // Asegurarse de habilitar SSL
+        options.Ssl = true; // Habilitar SSL para la conexión
+        options.SslHost = "redis-13316.c239.us-east-1-2.ec2.redns.redis-cloud.com:13316";  // Host de Redis Cloud
+        options.AbortOnConnectFail = false;
+        var redisConnection = ConnectionMultiplexer.Connect(options);
+        builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+    }
+    catch (Exception ex)
+    {
+        builder.Services.AddSingleton<IConnectionMultiplexer>();
+        Console.WriteLine($"Error connecting to Redis: {ex.Message}");
+    }
+
 }
-catch (Exception ex)
+else
 {
-    builder.Services.AddSingleton<IConnectionMultiplexer>();
-    Console.WriteLine($"Error connecting to Redis: {ex.Message}");
+    // Para desarrollo local, utiliza appsettings.Development.json
+    var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+    if (!string.IsNullOrEmpty(redisConnectionString))
+    {
+        builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+    }
+    else
+    {
+        builder.Services.AddSingleton<IConnectionMultiplexer>();
+        Console.WriteLine("Redis connection string not found.");
+    }
 }
+Console.WriteLine($"Redis Connection String: {builder.Configuration["Redis:ConnectionString"]}");
 
 // add ICacheService
 builder.Services.AddScoped<ICacheService, RedisCacheService>();

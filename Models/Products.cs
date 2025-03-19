@@ -15,8 +15,6 @@ namespace WebApiProducts.Models
         public int CategoryId { get; set; }
         public virtual Category Category { get; set; }
 
-        private static int Idx = 0;
-
         public Products()
         {
 
