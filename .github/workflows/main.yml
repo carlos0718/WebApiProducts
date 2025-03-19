@@ -20,9 +20,14 @@ jobs:
 
       - name: Publish
         run: dotnet publish --configuration Release --output ./publish --runtime win-x86 
-        
+      
       - name: Test with .NET
         run: dotnet test
+
+      - name: Set environment variables for Redis and DB connection
+        run: |
+          echo "REDIS_CONNECTION=${{ secrets.REDIS_CONNECTION_STRING }}" >> $GITHUB_ENV
+          echo "DB_CONNECTION=${{ secrets.DB_CONNECTION_STRING }}" >> $GITHUB_ENV
 
       - name: Deploy API to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0
@@ -31,3 +36,7 @@ jobs:
           server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
           server-username: ${{ secrets.SERVER_USERNAME }}
           server-password: ${{ secrets.SERVER_PASSWORD }}
+          source-path: ./publish/
+          target-path: ""  # Asegúrate de poner el directorio correcto en el servidor
+          target-delete: false
+          skip-directory-path: ""
