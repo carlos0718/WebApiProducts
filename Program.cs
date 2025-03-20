@@ -43,6 +43,7 @@ if (builder.Environment.IsProduction() || builder.Environment.IsStaging())
         options.AbortOnConnectFail = false;
         var redisConnection = ConnectionMultiplexer.Connect(options);
         builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+        Console.WriteLine($"Redis Connection String: {redisConnectionString}");
     }
     catch (Exception ex)
     {
@@ -58,6 +59,7 @@ else
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
         builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+        Console.WriteLine($"Redis Connection String: {builder.Configuration["Redis:ConnectionString"]}");
     }
     else
     {
@@ -65,7 +67,6 @@ else
         Console.WriteLine("Redis connection string not found!!.");
     }
 }
-Console.WriteLine($"Redis Connection String: {builder.Configuration["Redis:ConnectionString"]}");
 
 // add ICacheService
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
