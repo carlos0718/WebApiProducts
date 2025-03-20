@@ -22,7 +22,7 @@ jobs:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
           
       - name: Publish
-        run: dotnet publish --configuration Release --output ./publish --runtime win-x86 
+        run: dotnet publish --configuration Release --output ./publish --runtime win-x64
         env:
           REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
