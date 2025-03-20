@@ -38,7 +38,8 @@ if (builder.Environment.IsProduction() || builder.Environment.IsStaging())
 
         // Asegurarse de habilitar SSL
         options.Ssl = true; // Habilitar SSL para la conexión
-        options.SslHost = "redis-13316.c239.us-east-1-2.ec2.redns.redis-cloud.com:13316";  // Host de Redis Cloud
+        options.SslHost = "redis-13316.c239.us-east-1-2.ec2.redns.redis-cloud.com";  // Host de Redis Cloud
+        options.SyncTimeout = 10000; // tiempo de espera a 10 segundos
         options.AbortOnConnectFail = false;
         var redisConnection = ConnectionMultiplexer.Connect(options);
         builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
