@@ -14,21 +14,33 @@ jobs:
           
       - name: Install dependencies
         run: dotnet restore
-        
+      
       - name: Build
         run: dotnet build --configuration Release --no-restore
-
+        env:
+          REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          
       - name: Publish
         run: dotnet publish --configuration Release --output ./publish --runtime win-x86 
+        env:
+          REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
       
+      - name: Deploy to production
+        run: |
+          echo "Deploying app with Redis connection string: $REDIS_CONNECTION_STRING"
+          echo "Deploying app with DB connection string: $DB_CONNECTION_STRING"
+        env:
+          REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          
       - name: Test with .NET
         run: dotnet test
 
       - name: Deploy API to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0
         with:
-          db-connection-string: ${{ secrets.DB_CONNECTION_STRING }}
-          redis-connection-string: ${{ secrets.REDIS_CONNECTION_STRING }}
           website-name: ${{ secrets.WEBSITE_NAME }}
           server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
           server-username: ${{ secrets.SERVER_USERNAME }}
