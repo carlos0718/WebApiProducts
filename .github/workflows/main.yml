@@ -24,14 +24,11 @@ jobs:
       - name: Test with .NET
         run: dotnet test
 
-      - name: Set environment variables for Redis and DB connection
-        run: |
-          echo "REDIS_CONNECTION=${{ secrets.REDIS_CONNECTION_STRING }}" >> $GITHUB_ENV
-          echo "DB_CONNECTION=${{ secrets.DB_CONNECTION_STRING }}" >> $GITHUB_ENV
-
       - name: Deploy API to MonsterASP.NET via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.1.0
         with:
+          db-connection-string: ${{ secrets.DB_CONNECTION_STRING }}
+          redis-connection-string: ${{ secrets.REDIS_CONNECTION_STRING }}
           website-name: ${{ secrets.WEBSITE_NAME }}
           server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
           server-username: ${{ secrets.SERVER_USERNAME }}
