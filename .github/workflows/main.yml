@@ -4,6 +4,7 @@ on: [push]
 jobs:
   build_and_deploy:
     runs-on: windows-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -18,8 +19,8 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
         env:
-          REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
-          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+            REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+            DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
           
       - name: Publish
         run: dotnet publish --configuration Release --output ./publish --runtime win-x64
