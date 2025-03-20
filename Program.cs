@@ -6,15 +6,11 @@ using WebApiProducts.Services;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration
-       .SetBasePath(Directory.GetCurrentDirectory())
-       .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-       .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false);
 
 Console.WriteLine($"Current Environment: {builder.Environment.EnvironmentName}");
 
 // Add services to the container.
-
+builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -65,7 +61,7 @@ else
     else
     {
         builder.Services.AddSingleton<IConnectionMultiplexer>();
-        Console.WriteLine("Redis connection string not found.");
+        Console.WriteLine("Redis connection string not found!!.");
     }
 }
 Console.WriteLine($"Redis Connection String: {builder.Configuration["Redis:ConnectionString"]}");
