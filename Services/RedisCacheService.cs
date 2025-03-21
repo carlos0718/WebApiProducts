@@ -1,5 +1,4 @@
-﻿
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 
 namespace WebApiProducts.Services
 {
@@ -14,9 +13,25 @@ namespace WebApiProducts.Services
 
         public async Task<string> GetCacheValueAsync(string key)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            var value = await db.StringGetAsync(key);
-            return value.HasValue ? value.ToString() : string.Empty;
+            if (_connectionMultiplexer == null || !_connectionMultiplexer.IsConnected)
+            {
+                // Manejar el error de conexión
+                Console.WriteLine("No se pudo conectar a Redis.");
+                return string.Empty;
+            }
+
+            try
+            {
+                var db = _connectionMultiplexer.GetDatabase();
+                var value = await db.StringGetAsync(key);
+                return value.HasValue ? value.ToString() : string.Empty;
+            }
+            catch (Exception ex)
+            {
+                // Manejar cualquier otro error
+                Console.WriteLine($"Error al acceder a Redis: {ex.Message}");
+                return string.Empty;
+            }
         }
 
         public async Task SetCacheValueAsync(string key, string value)
