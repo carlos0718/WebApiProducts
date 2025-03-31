@@ -91,6 +91,13 @@ else
 
 // add ICacheService
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder => builder.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
 
 var app = builder.Build();
 
@@ -104,7 +111,6 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
+app.UseCors("AllowAll");
 app.MapControllers();
-
 app.Run();
