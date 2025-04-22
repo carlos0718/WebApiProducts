@@ -141,5 +141,23 @@ namespace WebApiProducts.Controllers
         {
             return _context.Products.Any(e => e.Id == id);
         }
+
+        public async Task<ActionResult<IEnumerable<Products>>> GetProductsByCategory(int id)
+        {
+            string cacheKey = "Products_Category_" + id;
+            var cachingData = await _cacheService.GetCacheValueAsync(cacheKey);
+            List<Products>? products;
+            if (string.IsNullOrEmpty(cachingData))
+            {
+                products = await _context.Products.Where(p => p.CategoryId == id).ToListAsync();
+                await _cacheService.SetCacheValueAsync(cacheKey, JsonConvert.SerializeObject(products));
+
+            }
+            else
+                products = JsonConvert.DeserializeObject<List<Products>>(cachingData);
+            if (products == null)
+                return NotFound();
+            return products;
+        }
     }
 }

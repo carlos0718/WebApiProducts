@@ -9,7 +9,7 @@ create table Category(
 go
 create table Products(
 	Id int primary key identity(1,1),
-	[Name] varchar(50) not null,
+	Title varchar(max) not null,
 	[Description] varchar(max),
 	Rate int not null,
 	Price decimal(10,2) not null,
@@ -18,14 +18,7 @@ create table Products(
 go
 alter table Products 
 add [Image] varchar(max) 
-go
-alter table Products 
-add Title varchar(max) 
-go
-alter table Products
-drop column [Name]
 
-update Products set Title = [Name]
 
 -- insert Categorias
 INSERT INTO Category ([Name]) VALUES 
