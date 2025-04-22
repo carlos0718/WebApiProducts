@@ -142,6 +142,8 @@ namespace WebApiProducts.Controllers
             return _context.Products.Any(e => e.Id == id);
         }
 
+        //GET Products by Category: api/Products/category/id
+        [HttpGet("category/{id}")]
         public async Task<ActionResult<IEnumerable<Products>>> GetProductsByCategory(int id)
         {
             string cacheKey = "Products_Category_" + id;
