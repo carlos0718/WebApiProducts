@@ -19,7 +19,13 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "WebApiProducts",
-        Version = "v1"
+        Version = "v1",
+        Description = "API para gestionar productos y categorías.",
+        Contact = new OpenApiContact
+        {
+            Name = "Carlos Jesus",
+            Url = new Uri("https://portfolio-master-carlos-jesus.vercel.app/")
+        }
     });
 });
 
