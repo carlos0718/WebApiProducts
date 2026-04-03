@@ -82,17 +82,27 @@ else
     var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
     if (!string.IsNullOrEmpty(redisConnectionString))
     {
-        ConfigurationOptions? options = ConfigurationOptions.Parse(redisConnectionString);
-        options.Ssl = false; // Habilitar SSL
-        options.SyncTimeout = 10000; // Ajusta el tiempo de espera si es necesario
-        options.AbortOnConnectFail = false; // No abortar si la conexi�n falla
-        builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(options));
-        Console.WriteLine($"Redis Connection String: {builder.Configuration["Redis:ConnectionString"]}");
+        try
+        {
+            ConfigurationOptions? options = ConfigurationOptions.Parse(redisConnectionString);
+            options.Ssl = false;
+            options.SyncTimeout = 5000;
+            options.ConnectTimeout = 5000;
+            options.AbortOnConnectFail = false;
+            var redisConnection = ConnectionMultiplexer.Connect(options);
+            builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
+            Console.WriteLine($"Redis connected successfully: {redisConnectionString}");
+        }
+        catch (Exception ex)
+        {
+            builder.Services.AddSingleton<IConnectionMultiplexer>();
+            Console.WriteLine($"Warning: Could not connect to Redis in Development: {ex.Message}. Continuing without cache.");
+        }
     }
     else
     {
         builder.Services.AddSingleton<IConnectionMultiplexer>();
-        Console.WriteLine("Redis connection string not found!!.");
+        Console.WriteLine("Redis connection string not found. Continuing without cache.");
     }
 }
 
