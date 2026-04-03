@@ -36,8 +36,22 @@ namespace WebApiProducts.Services
 
         public async Task SetCacheValueAsync(string key, string value)
         {
-            var db = _connectionMultiplexer.GetDatabase();
-            await db.StringSetAsync(key, value, TimeSpan.FromHours(2));
+            if (_connectionMultiplexer == null || !_connectionMultiplexer.IsConnected)
+            {
+                Console.WriteLine("No se pudo conectar a Redis.");
+                return;
+            }
+
+            try
+            {
+                var db = _connectionMultiplexer.GetDatabase();
+                await db.StringSetAsync(key, value, TimeSpan.FromHours(2));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al guardar en Redis: {ex.Message}");
+                // No lanzar la excepción, solo loguear
+            }
         }
     }
 }

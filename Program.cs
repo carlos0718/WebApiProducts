@@ -53,20 +53,21 @@ if (builder.Environment.IsProduction() || builder.Environment.IsStaging())
     // Construir el objeto ConfigurationOptions
     var configOptions = new ConfigurationOptions
     {
-        EndPoints = { $"{redisHost}:{redisPort}" },
-        User = redisUser,
-        Password = redisPassword,
+        EndPoints = { redisHost }, // Si redisHost ya incluye puerto, no agregar redisPort
+        User = string.IsNullOrEmpty(redisUser) ? null : redisUser,
+        Password = string.IsNullOrEmpty(redisPassword) ? null : redisPassword,
         Ssl = useSsl,
-        SslHost = redisHost,
+        SslHost = redisHost?.Split(':')[0], // Extraer solo el host sin puerto para SslHost
         AbortOnConnectFail = false,
-        SyncTimeout = 10000 // Ajusta el tiempo de espera si lo deseas
+        SyncTimeout = 10000,
+        ConnectTimeout = 10000
     };
 
     try
     {
         var redisConnection = ConnectionMultiplexer.Connect(configOptions);
         builder.Services.AddSingleton<IConnectionMultiplexer>(redisConnection);
-        Console.WriteLine($"Redis Connection String: {redisConnectionString}");
+        Console.WriteLine($"Redis connected successfully to: {redisHost}");
     }
     catch (Exception ex)
     {
@@ -119,13 +120,17 @@ app.Use(async (context, next) =>
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         context.Response.ContentType = "application/json";
 
+        // Log de excepción
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An unhandled exception occurred");
+
         var response = new
         {
             statusCode = StatusCodes.Status500InternalServerError,
             message = "An internal server error occurred",
-            detail = app.Environment.IsDevelopment() ? ex.Message : null,
-            stackTrace = app.Environment.IsDevelopment() ? ex.StackTrace : null,
-            innerException = app.Environment.IsDevelopment() ? ex.InnerException?.Message : null
+            detail = ex.Message,
+            stackTrace = ex.StackTrace,
+            innerException = ex.InnerException?.Message
         };
 
         await context.Response.WriteAsJsonAsync(response);
