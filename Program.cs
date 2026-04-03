@@ -20,7 +20,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "WebApiProducts",
         Version = "v1",
-        Description = "API para gestionar productos y categorías.",
+        Description = "API para gestionar productos y categorÃ­as.",
         Contact = new OpenApiContact
         {
             Name = "Carlos Jesus",
@@ -84,7 +84,7 @@ else
         ConfigurationOptions? options = ConfigurationOptions.Parse(redisConnectionString);
         options.Ssl = false; // Habilitar SSL
         options.SyncTimeout = 10000; // Ajusta el tiempo de espera si es necesario
-        options.AbortOnConnectFail = false; // No abortar si la conexión falla
+        options.AbortOnConnectFail = false; // No abortar si la conexiï¿½n falla
         builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(options));
         Console.WriteLine($"Redis Connection String: {builder.Configuration["Redis:ConnectionString"]}");
     }
@@ -106,6 +106,31 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Middleware para manejo global de excepciones
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        var response = new
+        {
+            statusCode = StatusCodes.Status500InternalServerError,
+            message = "An internal server error occurred",
+            detail = app.Environment.IsDevelopment() ? ex.Message : null,
+            stackTrace = app.Environment.IsDevelopment() ? ex.StackTrace : null,
+            innerException = app.Environment.IsDevelopment() ? ex.InnerException?.Message : null
+        };
+
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
